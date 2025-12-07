@@ -20,7 +20,7 @@
     "openai": "^6.9.1",
     "pdf-parse": "^2.4.5",
     "tesseract.js": "^6.0.1",
-    "csv-parser": "^3.0.0",
-    "xlsx": "^0.19.3"
+    "csv-parser": "^3.2.0",
+    "xlsx": "^0.18.5"
   }
 }
