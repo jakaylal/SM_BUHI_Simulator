@@ -1,14 +1,11 @@
-// filereader.js
 import fs from "fs";
 import csv from "csv-parser";
 import xlsx from "xlsx";
-//import pdf from "pdf-parse";
 
 export function readFileContent(filePath) {
   return new Promise((resolve, reject) => {
     const ext = filePath.toLowerCase();
 
-    // ---------- CSV SUPPORT ----------
     if (ext.endsWith(".csv")) {
       const rows = [];
       fs.createReadStream(filePath)
@@ -28,7 +25,6 @@ export function readFileContent(filePath) {
       return;
     }
 
-    // ---------- EXCEL SUPPORT (.xlsx / .xls) ----------
     if (ext.endsWith(".xlsx") || ext.endsWith(".xls")) {
       try {
         const workbook = xlsx.readFile(filePath);
@@ -48,7 +44,6 @@ export function readFileContent(filePath) {
       }
     }
 
-    // ---------- PDF SUPPORT ----------
     if (ext.endsWith(".pdf")) {
       fs.readFile(filePath, (err, data) => {
         if (err) return reject(err);
@@ -60,10 +55,10 @@ export function readFileContent(filePath) {
       return;
     }
 
-    // ---------- DEFAULT TEXT SUPPORT ----------
     fs.readFile(filePath, "utf8", (err, data) => {
       if (err) reject(err);
       else resolve(data);
     });
   });
 }
+
