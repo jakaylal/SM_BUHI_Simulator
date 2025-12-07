@@ -12,23 +12,18 @@ dotenv.config();
 const app = express();
 const __dirname = path.resolve();
 
-// OpenAI client
+// OpenAI API
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Uploads directory
+// Uploads
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// --------------------------------------------
-// NEW SECTION ADDED: Load instruction files
-// (txt, md, csv, xlsx, xls, pdf)
-// --------------------------------------------
 async function loadInstructionFilesWithContent() {
   const files = fs
     .readdirSync(instructionsDir)
@@ -44,23 +39,15 @@ async function loadInstructionFilesWithContent() {
   return fileMap;
 }
 
-
-// Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
 });
 const upload = multer({ storage });
 
-// ==========================
-// DYNAMIC INSTRUCTIONS SYSTEM
-// ==========================
-
-// Instructions directory
 const instructionsDir = path.join(__dirname, "instructions");
 if (!fs.existsSync(instructionsDir)) fs.mkdirSync(instructionsDir);
 
-// Load instruction files into memory
 function loadInstructionFiles() {
   return fs.readdirSync(instructionsDir)
     .filter(f =>
@@ -73,7 +60,6 @@ function loadInstructionFiles() {
     );
 }
 
-// Refresh on every request
 let FILE_REFERENCES = loadInstructionFiles();
 
 let chatHistory = [];
@@ -101,26 +87,21 @@ app.post("/", upload.single("userFile"), async (req, res) => {
   try {
     let aiResponse = "";
 
-    // Add user message to chat history (before AI response)
     chatHistory.push({ role: "user", text: userPrompt || "Uploaded a file" });
 
-    // Handle uploaded file
     if (uploadedFile) {
       const fileText = await readFileContent(uploadedFile.path);
 
       aiResponse += `File "${uploadedFile.originalname}" uploaded successfully.\n\n`;
       aiResponse += `Extracted content:\n${fileText}\n\n`;
 
-      // Add file text to user prompt
       userPrompt = userPrompt
         ? userPrompt + "\n\n" + fileText
         : fileText;
 
-      // remove file from /uploads
       fs.unlink(uploadedFile.path, () => {});
     }
 
-    // Reload instructions on every request
     FILE_REFERENCES = loadInstructionFiles();
 
     // SYSTEM PROMPT
@@ -162,7 +143,6 @@ Please provide:
 (You may also upload documents or past posts.)
 `;
 
-    // FULL MESSAGE HISTORY
     const messages = [
       { role: "system", content: SYSTEM_PROMPT },
       ...chatHistory.map(msg => ({
@@ -172,9 +152,8 @@ Please provide:
       { role: "user", content: userPrompt }
     ];
 
-    // AI COMPLETION
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o-mini", // loads faster
       messages
     });
 
